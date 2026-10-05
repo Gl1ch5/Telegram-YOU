@@ -158,13 +158,74 @@ function archiveRow() {
     <div class="cx-line"><span class="cx-prev">${escapeHtml(names)}</span>${n ? `<span class="cx-badge muted">${n}</span>` : ''}</div></div></div>`;
 }
 
+function foldersList() {
+  return [{ id: 'all', title: t('Все') }, ...(S.folders.length ? S.folders.map((f) => ({ id: String(f.id), title: f.title })) : [{ id: 'personal', title: t('Личные') }, { id: 'unread', title: t('Новые') }])];
+}
+
 function foldersHtml() {
-  const all = [{ id: 'all', title: t('Все') }, ...(S.folders.length ? S.folders.map((f) => ({ id: String(f.id), title: f.title })) : [{ id: 'personal', title: t('Личные') }, { id: 'unread', title: t('Новые') }])];
+  const all = foldersList();
   if (all.length < 2) return '';
   return `<div class="cx-folders">${all.map((f) => {
     const n = unreadIn(f.id);
     return `<button class="cx-folder ${S.folder === f.id ? 'on' : ''}" data-f="${f.id}">${escapeHtml(f.title)}${n ? `<i>${n}</i>` : ''}</button>`;
   }).join('')}</div>`;
+}
+
+export function switchFolder(nextId, animDir = 0) {
+  const all = foldersList();
+  const curIdx = all.findIndex((f) => f.id === S.folder);
+  const nextIdx = all.findIndex((f) => f.id === nextId);
+  if (nextIdx === -1 || nextId === S.folder) return;
+  const dir = animDir || (nextIdx > curIdx ? 1 : -1);
+  const el = root();
+  const sc = el ? el.querySelector('.cx-scroll') : null;
+  if (!sc || animDir === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    S.folder = nextId;
+    render();
+    return;
+  }
+  // Smooth animated folder transition
+  const oldSc = sc;
+  S.folder = nextId;
+  const list = inFolder(S.folder);
+  let rows = (S.folder === 'all' ? archiveRow() : '') + list.map(rowHtml).join('');
+  if (!list.length && !S.loading) rows += `<div class="cx-end">${t('Здесь пока пусто')}</div>`;
+  if (S.hasMore) rows += '<div class="cx-end" id="cx-more">…</div>';
+
+  const newSc = document.createElement('div');
+  newSc.className = `cx-scroll ${dir > 0 ? 'folder-slide-in-right' : 'folder-slide-in-left'}`;
+  newSc.id = 'cx-list';
+  newSc.innerHTML = rows;
+
+  oldSc.removeAttribute('id');
+  oldSc.classList.add(dir > 0 ? 'folder-slide-out-left' : 'folder-slide-out-right');
+
+  const parent = oldSc.parentElement;
+  if (parent) {
+    parent.appendChild(newSc);
+    setTimeout(() => oldSc.remove(), 240);
+  } else {
+    render();
+    return;
+  }
+
+  // Update folder pills
+  const foldersWrap = el.querySelector('.cx-folders');
+  if (foldersWrap) {
+    for (const btn of foldersWrap.children) {
+      btn.classList.toggle('on', btn.dataset.f === nextId);
+    }
+    const onBtn = foldersWrap.querySelector('.cx-folder.on');
+    if (onBtn && typeof onBtn.scrollIntoView === 'function') {
+      onBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }
+
+  const more = newSc.querySelector('#cx-more');
+  if (more && 'IntersectionObserver' in window) {
+    new IntersectionObserver((e, o) => { if (e[0].isIntersecting) { o.disconnect(); loadMore(); } }, { root: newSc, rootMargin: '600px' }).observe(more);
+  }
+  emit('unread', totalUnread());
 }
 
 function skeleton() {
@@ -203,7 +264,7 @@ export function render(keepScroll = false) {
     </div>
     ${searchOpen ? `<div class="cx-search">${I.search}<input id="cx-q" placeholder="${t('Поиск')}" value="${escapeHtml(query)}" autocomplete="off"></div>` : ''}
     ${showArchive || searchOpen ? '' : foldersHtml()}
-    <div class="cx-scroll" id="cx-list">${rows}</div>
+    <div class="cx-list-viewport"><div class="cx-scroll" id="cx-list">${rows}</div></div>
     ${showArchive ? '' : `<button class="cx-fab2" data-act="cam" aria-label="${t('Камера')}">${I.camera}</button><button class="cx-fab" data-act="new" aria-label="${t('Новое сообщение')}">${I.fab}</button>`}`;
   const sc = el.querySelector('.cx-scroll');
   if (keepScroll || top) sc.scrollTop = top;
@@ -235,7 +296,7 @@ function onClick(e) {
     return;
   }
   const f = e.target.closest('[data-f]');
-  if (f) { S.folder = f.dataset.f; render(); return; }
+  if (f) { switchFolder(f.dataset.f); return; }
   const row = e.target.closest('.cx-row');
   if (!row) return;
   if (row.dataset.archive) { showArchive = true; render(); return; }
@@ -271,13 +332,45 @@ export function initList() {
   el.addEventListener('click', onClick);
   el.addEventListener('contextmenu', onContext);
   let pressTimer = 0;
+  let startX = 0, startY = 0, swipingFolders = false;
   el.addEventListener('touchstart', (e) => {
     const row = e.target.closest('.cx-row[data-id]');
-    if (!row) return;
     const p = e.touches[0];
+    startX = p.clientX;
+    startY = p.clientY;
+    swipingFolders = false;
+    if (!row) return;
     pressTimer = setTimeout(() => { pressTimer = -1; rowMenu(row.dataset.id, p.clientX, p.clientY); }, 520);
   }, { passive: true });
-  ['touchend', 'touchmove', 'touchcancel'].forEach((n) => el.addEventListener(n, () => clearTimeout(pressTimer), { passive: true }));
+  el.addEventListener('touchmove', (e) => {
+    const p = e.touches[0];
+    const dx = p.clientX - startX;
+    const dy = p.clientY - startY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearTimeout(pressTimer);
+    if (!showArchive && !searchOpen && Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      swipingFolders = true;
+    }
+  }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    clearTimeout(pressTimer);
+    if (swipingFolders) {
+      const p = e.changedTouches[0];
+      const dx = p.clientX - startX;
+      if (Math.abs(dx) > 42) {
+        const all = foldersList();
+        const curIdx = all.findIndex((f) => f.id === S.folder);
+        if (curIdx !== -1) {
+          if (dx < 0 && curIdx < all.length - 1) switchFolder(all[curIdx + 1].id, 1);
+          else if (dx > 0 && curIdx > 0) switchFolder(all[curIdx - 1].id, -1);
+        }
+      }
+    }
+    swipingFolders = false;
+  }, { passive: true });
+  el.addEventListener('touchcancel', () => {
+    clearTimeout(pressTimer);
+    swipingFolders = false;
+  }, { passive: true });
   el.addEventListener('input', (e) => {
     if (e.target.id !== 'cx-q') return;
     query = e.target.value;

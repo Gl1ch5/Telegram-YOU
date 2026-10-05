@@ -730,17 +730,17 @@
   "plural": false
  },
  {
+  "key": "Здесь пока пусто",
+  "where": "js/ui/list.js",
+  "plural": false
+ },
+ {
   "key": "Архив пуст",
   "where": "js/ui/list.js",
   "plural": false
  },
  {
   "key": "Глобальный поиск",
-  "where": "js/ui/list.js",
-  "plural": false
- },
- {
-  "key": "Здесь пока пусто",
   "where": "js/ui/list.js",
   "plural": false
  },

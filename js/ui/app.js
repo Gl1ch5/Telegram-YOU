@@ -80,12 +80,50 @@ function dock() {
 }
 
 let settingsParams = {};
+const TAB_ORDER = ['chats', 'contacts', 'settings', 'profile'];
+let activePageTransitionTimer = 0;
+
 function showTab(tab) {
   // Back from any tab other than "Chats" returns to "Chats"; Back from there leaves the app.
   if (tab !== 'chats') pushLayer('tab', () => showTab('chats'));
   else closeLayer('tab');
+  const oldTab = S.tab;
   S.tab = tab;
-  for (const id of ['chats', 'contacts', 'settings', 'profile']) $(`page-${id}`).classList.toggle('tx-hidden', id !== tab);
+  const oldIdx = TAB_ORDER.indexOf(oldTab);
+  const newIdx = TAB_ORDER.indexOf(tab);
+  const isAnimated = oldTab && oldTab !== tab && oldIdx !== -1 && newIdx !== -1;
+  const toRight = newIdx > oldIdx;
+
+  clearTimeout(activePageTransitionTimer);
+  for (const id of TAB_ORDER) {
+    const el = $(`page-${id}`);
+    if (!el) continue;
+    el.classList.remove('slide-enter-right', 'slide-enter-left', 'slide-exit-left', 'slide-exit-right');
+  }
+
+  if (isAnimated) {
+    const oldEl = $(`page-${oldTab}`);
+    const newEl = $(`page-${tab}`);
+    if (oldEl && newEl) {
+      newEl.classList.remove('tx-hidden');
+      newEl.classList.add(toRight ? 'slide-enter-right' : 'slide-enter-left');
+      oldEl.classList.add(toRight ? 'slide-exit-left' : 'slide-exit-right');
+      activePageTransitionTimer = setTimeout(() => {
+        for (const id of TAB_ORDER) {
+          const el = $(`page-${id}`);
+          if (el) {
+            el.classList.toggle('tx-hidden', id !== tab);
+            el.classList.remove('slide-enter-right', 'slide-enter-left', 'slide-exit-left', 'slide-exit-right');
+          }
+        }
+      }, 240);
+    } else {
+      for (const id of TAB_ORDER) $(`page-${id}`).classList.toggle('tx-hidden', id !== tab);
+    }
+  } else {
+    for (const id of TAB_ORDER) $(`page-${id}`).classList.toggle('tx-hidden', id !== tab);
+  }
+
   if (tab === 'contacts') renderContacts();
   if (tab === 'settings') renderSettings(settingsParams);
   if (tab === 'profile') renderProfile({});

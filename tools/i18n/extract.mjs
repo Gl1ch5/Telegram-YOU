@@ -2,11 +2,12 @@
 //   node tools/i18n/extract.mjs            → tools/i18n/keys.json
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 let acorn;
 try { acorn = require('acorn'); } catch { acorn = require(process.env.ACORN || '/opt/node-tools/node_modules/acorn'); }
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const keys = new Map();
 const add = (k, where, plural) => { if (!keys.has(k)) keys.set(k, { where, plural: !!plural }); };
 
@@ -36,7 +37,8 @@ function scan(dir) {
     if (e.isDirectory()) { if (!['vendor', 'lang'].includes(e.name)) scan(p); continue; }
     if (!e.name.endsWith('.js')) continue;
     const src = fs.readFileSync(p, 'utf8');
-    try { walk(acorn.parse(src, { ecmaVersion: 'latest', sourceType: 'module', allowAwaitOutsideFunction: true }), path.relative(ROOT, p), src); } catch (err) { console.error('parse', p, err.message); }
+    const rel = path.relative(ROOT, p).split(path.sep).join('/');
+    try { walk(acorn.parse(src, { ecmaVersion: 'latest', sourceType: 'module', allowAwaitOutsideFunction: true }), rel, src); } catch (err) { console.error('parse', p, err.message); }
   }
 }
 scan(path.join(ROOT, 'js'));

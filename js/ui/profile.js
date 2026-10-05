@@ -24,8 +24,10 @@ export async function openProfile(key, { onChat } = {}) {
 
 export function closeProfile(fromPop = false) {
   if (!state) return;
-  state.el.remove();
+  const current = state;
   state = null;
+  current.el.classList.add('slide-out');
+  setTimeout(() => current.el.remove(), 220);
   closeLayer('profile');
 }
 

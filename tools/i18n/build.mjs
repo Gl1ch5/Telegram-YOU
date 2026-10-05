@@ -3,7 +3,8 @@
 //   node tools/i18n/extract.mjs && node tools/i18n/build.mjs
 import fs from 'node:fs';
 import path from 'node:path';
-const here = path.dirname(new URL(import.meta.url).pathname);
+import { fileURLToPath } from 'node:url';
+const here = path.dirname(fileURLToPath(import.meta.url));
 const out = path.resolve(here, '../../js/lang');
 const keys = JSON.parse(fs.readFileSync(path.join(here, 'keys.json'), 'utf8'));
 const LANGS = [['en', 'EN'], ['es', 'ES'], ['pt', 'PT'], ['uk', 'UK']];
@@ -11,7 +12,8 @@ const tables = Object.fromEntries(LANGS.map(([c]) => [c, {}]));
 const seen = new Set();
 const bad = [];
 const unspace = (s) => s.replace(/␣/g, ' ');
-for (const [i, line] of fs.readFileSync(path.join(here, 'translations.txt'), 'utf8').split('\n').entries()) {
+for (const [i, rawLine] of fs.readFileSync(path.join(here, 'translations.txt'), 'utf8').split('\n').entries()) {
+  const line = rawLine.replace(/\r$/, '');
   if (!line.trim() || line.startsWith('#') && !line.startsWith('#{')) continue;
   const parts = line.split(' ‖ ');
   const plural = parts[0].startsWith('#{');
