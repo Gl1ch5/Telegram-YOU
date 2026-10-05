@@ -3,9 +3,10 @@
 // Nothing is pushed. Afterwards:  git push origin main --follow-tags   → CI builds APK, Windows app and the site.
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sh = (cmd, opts = {}) => execSync(cmd, { cwd: root, stdio: 'pipe', encoding: 'utf8', ...opts }).trim();
 const die = (m) => { console.error('✗ ' + m); process.exit(1); };
 
