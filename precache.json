@@ -1,5 +1,5 @@
 {
- "build": "298e6acd14",
+ "build": "46cfaec61b",
  "files": [
   "./",
   "index.html",
@@ -47,6 +47,7 @@
   "js/ui/icons.js",
   "js/ui/list.js",
   "js/ui/mods.js",
+  "js/ui/notify.js",
   "js/ui/pages.js",
   "js/ui/panel.js",
   "js/ui/profile.js",

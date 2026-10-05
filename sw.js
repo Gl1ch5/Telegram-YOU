@@ -8,7 +8,7 @@
  */
 
 const MEDIA_CACHE = 'telex-media-v1';
-const BUILD = '298e6acd14'; // replaced by tools/build-precache.mjs: changes with every file → a new worker
+const BUILD = '46cfaec61b'; // replaced by tools/build-precache.mjs: changes with every file → a new worker
 const SW_VERSION = '1.0.0';
 const CACHEABLE = new Set(['avatar', 'avatarbig', 'photo', 'thumb', 'webpage', 'cemoji', 'cmedia', 'cthumb', 'storythumb', 'photofull', 'wallpaper']);
 const STREAMED = new Set(['doc', 'story']);
@@ -40,6 +40,18 @@ async function appFile(request) {
   if (res.ok && res.type === 'basic') cache.put(request, res.clone()).catch(() => {});
   return res;
 }
+
+// Tap on a notification: focus the app and open that chat.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const chat = event.notification.data && event.notification.data.chat;
+  event.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const client = all.find((c) => c.visibilityState === 'visible') || all[0];
+    if (client) { await client.focus(); client.postMessage({ type: 'open-chat', chat }); return; }
+    await self.clients.openWindow(self.registration.scope + (chat ? `?chat=${encodeURIComponent(chat)}` : ''));
+  })());
+});
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);

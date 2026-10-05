@@ -39,6 +39,13 @@ const DEFAULTS = {
   colorTheme: 'classic',  // chat colour theme (outgoing bubbles, wallpaper, accent)
   lang: 'auto',           // interface language: 'auto' or a code from i18n.js
   nameColor: 'auto',      // own name colour in chats: 'auto' or a peer colour 0-6
+  notifyPrivate: true,    // notifications: private chats
+  notifyGroups: true,     // groups
+  notifyChannels: true,   // channels
+  notifyPreview: true,    // show the message text in a notification
+  notifySound: true,      // sounds (notification + in-app)
+  notifyBadge: true,      // unread counter on the tab title / app icon
+  bgService: true,        // Android: keep the connection while the app is in the background
   devOverlay: false,      // developer: connection/ping badge
   devVerbose: false,      // developer: GramJS debug logging
 };

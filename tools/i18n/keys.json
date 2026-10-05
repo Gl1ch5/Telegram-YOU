@@ -1325,6 +1325,16 @@
   "plural": false
  },
  {
+  "key": "Уведомления и звуки",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Чаты, предпросмотр, звук",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
   "key": "Данные и память",
   "where": "js/views/settings.js",
   "plural": false
@@ -1986,6 +1996,101 @@
  },
  {
   "key": "Мод установлен",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Уведомления запрещены",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Разрешить уведомления",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Разрешите их в настройках браузера или телефона",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Чтобы видеть новые сообщения, когда приложение свёрнуто",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Личные чаты",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Уведомления о сообщениях",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Группы",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Каналы",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Уведомления о публикациях",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Чаты с отключённым звуком в Telegram не присылают уведомлений.",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Предпросмотр сообщений",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Показывать текст в уведомлении",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Звуки уведомлений и в приложении",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Счётчик на значке",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Число непрочитанных чатов",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Параметры",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Работа в фоне",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Держать соединение, пока приложение свёрнуто",
+  "where": "js/views/settings.js",
+  "plural": false
+ },
+ {
+  "key": "Без этого Android может остановить приложение, и уведомления перестанут приходить. В шторке будет постоянный значок.",
   "where": "js/views/settings.js",
   "plural": false
  },

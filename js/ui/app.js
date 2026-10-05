@@ -13,6 +13,7 @@ import * as settings from '../views/settings.js';
 import * as profile from '../views/profile.js';
 import { state } from '../state.js';
 import { pushLayer, closeLayer, hasLayer } from './back.js';
+import { notifyIncoming, updateBadge, initNotifyClicks, syncBackgroundService } from './notify.js';
 import { api } from '../api.js';
 import { showToast } from '../utils.js';
 
@@ -93,7 +94,7 @@ function showTab(tab) {
 
 function live() {
   S.tg.startChatLive({
-    onMessage: liveMessage,
+    onMessage: (m, meta) => { liveMessage(m); notifyIncoming(m, S.dialogs.get(m.chatId)); },
     onEdit: liveEdit,
     onDelete: liveDelete,
     onRead: (k, kind, id) => { onLiveRead(k, kind, id); liveRead(k, kind, id); },
@@ -114,6 +115,10 @@ async function start() {
   await loadFirst();
   live();
   startMods();
+  initNotifyClicks((id) => openChat(id));
+  syncBackgroundService();
+  const want = new URLSearchParams(location.search).get('chat');
+  if (want) openChat(want);
   try { const me = await S.tg.getMe(); if (me) { S.me = me; state.user = me; dock(); renderList(true); } } catch {}
 }
 
@@ -145,6 +150,7 @@ async function init() {
     setAccent: settings.setAccent, setNameColor: settings.setNameColor, openChatSettingsMenu: settings.openChatSettingsMenu,
     setLanguage: settings.setLanguage, filterLanguages: settings.filterLanguages, toggleLanguageSearch: settings.toggleLanguageSearch,
     openWallpaperPicker: settings.openWallpaperPicker, terminateSession: settings.terminateSession, setWorkerMode: settings.setWorkerMode,
+    askNotify: settings.askNotify, syncBg: settings.syncBg, refreshBadge: settings.refreshBadge,
     checkAppUpdate: settings.checkAppUpdate, toggleMod: settings.toggleMod, deleteMod: settings.deleteMod, installModFile: settings.installModFile,
     devPing: settings.devPing, devReconnect: settings.devReconnect, devExportLogs: settings.devExportLogs, devCopyDiagnostics: settings.devCopyDiagnostics,
     devClearLogs: settings.devClearLogs, devExportSession: settings.devExportSession, devToggleImport: settings.devToggleImport,
@@ -176,7 +182,7 @@ async function init() {
 
   $('cx-dock').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
   on('tab', showTab);
-  on('unread', dock);
+  on('unread', (n) => { dock(); updateBadge(n); });
 
   // The interface must not wait for the network: the media bridge starts in the background and,
   // when a session is saved on this device, the chat list is drawn at once from the local cache.

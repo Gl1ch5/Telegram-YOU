@@ -54,6 +54,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var downloads: Downloads
     private lateinit var updater: Updater
     private lateinit var assetLoader: WebViewAssetLoader
+    private lateinit var notifier: Notifier
+    private var keepAlive = false
 
     private val startedAt = SystemClock.uptimeMillis()
     private var firstPaint = false
@@ -90,6 +92,8 @@ class MainActivity : ComponentActivity() {
             .setDomain(AppConfig.HOST)
             .addPathHandler("/app/", WebViewAssetLoader.AssetsPathHandler(this))
             .build()
+        notifier = Notifier(this)
+        keepAlive = getSharedPreferences("telex", Context.MODE_PRIVATE).getBoolean("keepAlive", true)
         downloads = Downloads(this)
         updater = Updater(this)
         root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
@@ -111,8 +115,12 @@ class MainActivity : ComponentActivity() {
 
         val restored = savedInstanceState?.let { webView.restoreState(it) } != null
         if (!restored) {
-            webView.loadUrl(AppConfig.START_URL)
+            val chat = intent?.getStringExtra(Notifier.EXTRA_CHAT)
+            webView.loadUrl(if (chat.isNullOrBlank()) AppConfig.START_URL else AppConfig.START_URL + "?chat=" + Uri.encode(chat))
         }
+        // Keep the web renderer at full priority while hidden, so messages keep arriving in the background.
+        webView.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, false)
+        if (keepAlive) KeepAliveService.start(this)
         updater.check()
     }
 
@@ -271,7 +279,33 @@ class MainActivity : ComponentActivity() {
         if (save) getSharedPreferences("telex", Context.MODE_PRIVATE).edit().putBoolean("lightTheme", light).apply()
     }
 
+    private val notifyPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    /** A tap on a notification while the app is already running: open that chat. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val chat = intent.getStringExtra(Notifier.EXTRA_CHAT)
+        if (!chat.isNullOrBlank()) {
+            webView.evaluateJavascript("window.__openChat && window.__openChat(${JSONObject.quote(chat)})", null)
+        }
+    }
+
     private fun onBridgeMessage(message: String) {
+        if (message == "notifyPermission") {
+            if (Build.VERSION.SDK_INT >= 33 && !notifier.canPost()) notifyPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        if (message.startsWith("bg:")) {
+            keepAlive = message == "bg:on"
+            getSharedPreferences("telex", Context.MODE_PRIVATE).edit().putBoolean("keepAlive", keepAlive).apply()
+            if (keepAlive) KeepAliveService.start(this) else KeepAliveService.stop(this)
+            return
+        }
+        if (message.startsWith("{\"t\":\"notify\"")) {
+            runCatching { notifier.show(JSONObject(message)) }
+            return
+        }
         if (message.startsWith("theme:")) {
             applyBarTheme(message.removePrefix("theme:") == "light")
             return
@@ -474,7 +508,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onPause() {
-        webView.onPause()
+        // With the background connection on, the page must keep running to deliver notifications.
+        if (!keepAlive) webView.onPause()
         CookieManager.getInstance().flush()
         super.onPause()
     }

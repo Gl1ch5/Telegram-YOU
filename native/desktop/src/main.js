@@ -5,7 +5,7 @@
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
-const { app, BrowserWindow, session, shell, nativeTheme, Menu, net, protocol, ipcMain } = require('electron');
+const { app, BrowserWindow, session, shell, nativeTheme, Menu, net, protocol, ipcMain, Tray } = require('electron');
 
 const APP_URL = 'tgyou://app/index.html';
 const APP_SCOPE = 'tgyou://app/';
@@ -29,6 +29,8 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   let win = null;
+  let tray = null;
+  let quitting = false;
 
   app.on('second-instance', () => {
     if (!win) return;
@@ -137,7 +139,11 @@ if (!app.requestSingleInstanceLock()) {
 
     win.on('resize', saveSoon);
     win.on('move', saveSoon);
-    win.on('close', saveState);
+    // Closing the window hides it to the tray, so notifications about new messages keep coming.
+    win.on('close', (e) => {
+      saveState();
+      if (!quitting) { e.preventDefault(); win.hide(); }
+    });
     win.on('closed', () => { win = null; });
     win.on('page-title-updated', (e) => e.preventDefault());
 
@@ -166,20 +172,37 @@ if (!app.requestSingleInstanceLock()) {
   ipcMain.on('telex:theme', (e, mode) => {
     if (win && e.sender === win.webContents) nativeTheme.themeSource = mode === 'light' ? 'light' : 'dark';
   });
+  // A notification click (Service Worker) asks to bring the window to the front.
+  ipcMain.on('telex:show', (e) => { if (win && e.sender === win.webContents) { win.show(); win.focus(); } });
 
   app.on('web-contents-created', (_e, contents) => {
     contents.on('will-attach-webview', (ev) => ev.preventDefault());
   });
+
+  function createTray() {
+    tray = new Tray(path.join(__dirname, '..', 'build', 'icon.png'));
+    tray.setToolTip('Telegram You');
+    const show = () => { if (!win) createWindow(); else { win.show(); win.focus(); } };
+    tray.setContextMenu(Menu.buildFromTemplate([
+      { label: 'Открыть Telegram You', click: show },
+      { type: 'separator' },
+      { label: 'Выход', click: () => { quitting = true; app.quit(); } },
+    ]));
+    tray.on('click', show);
+  }
+
+  app.on('before-quit', () => { quitting = true; });
 
   app.whenReady().then(() => {
     nativeTheme.themeSource = 'dark';
     Menu.setApplicationMenu(null);
     configureSession(session.fromPartition(PARTITION));
     createWindow();
+    createTray();
     app.on('activate', () => { if (!win) createWindow(); });
   });
 
-  app.on('window-all-closed', () => app.quit());
+  app.on('window-all-closed', () => { if (quitting) app.quit(); });
 }
 
 module.exports = { APP_URL, APP_SCOPE, PARTITION };

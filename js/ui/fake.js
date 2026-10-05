@@ -63,5 +63,5 @@ export const fake = {
   async chatProfile(key) { const d = dialogs.find((x) => x.id === key) || dialogs[0]; return { id: d.id, title: d.title, username: 'muninvura', phone: '79921190156', about: 'Demo bio', avatar: null, status: d.status, kind: d.kind, muted: d.muted, blocked: false }; },
   async chatAppearance(key) { return key === 'u1004' ? { wallpaper: { kind: 'fill', colors: ['#dbddbb', '#6ba587', '#d5d88d', '#88b884'], intensity: 50, rotation: 0 }, theme: null } : null; },
   async chatShared() { return { messages: [], hasMore: false }; },
-  async startChatLive() {}, async logout() {},
+  async startChatLive(h) { window.__fakeLive = h; }, async logout() {},
 };

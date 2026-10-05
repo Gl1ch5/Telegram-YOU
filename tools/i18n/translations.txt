@@ -396,3 +396,24 @@ Telegram You {a} · автор ‖ Telegram You {a} · author ‖ Telegram You {
 Копия Telegram для Android в вебе ‖ Telegram for Android, copied for the web ‖ Telegram para Android, copiado para la web ‖ Telegram para Android, copiado para a web ‖ Копія Telegram для Android у вебі
 Telegram You — неофициальный клиент. Работает напрямую с серверами Telegram, сессия хранится только на вашем устройстве. ‖ Telegram You is an unofficial client. It talks to Telegram’s servers directly and the session stays on your device only. ‖ Telegram You es un cliente no oficial. Funciona directamente con los servidores de Telegram y la sesión se guarda solo en tu dispositivo. ‖ O Telegram You é um cliente não oficial. Funciona direto com os servidores do Telegram e a sessão fica apenas no seu dispositivo. ‖ Telegram You — неофіційний клієнт. Працює напряму із серверами Telegram, сесія зберігається лише на вашому пристрої.
 Мод получает полный доступ к приложению и вашему аккаунту. Ставьте только моды, которым доверяете. ‖ A mod gets full access to the app and your account. Install only mods you trust. ‖ Un mod tiene acceso total a la aplicación y a tu cuenta. Instala solo mods en los que confíes. ‖ Um mod tem acesso total ao app e à sua conta. Instale apenas mods em que confia. ‖ Мод отримує повний доступ до застосунку та вашого акаунта. Встановлюйте лише моди, яким довіряєте.
+Уведомления и звуки ‖ Notifications and sounds ‖ Notificaciones y sonidos ‖ Notificações e sons ‖ Сповіщення та звуки
+Чаты, предпросмотр, звук ‖ Chats, preview, sound ‖ Chats, vista previa, sonido ‖ Chats, pré-visualização, som ‖ Чати, попередній перегляд, звук
+Уведомления запрещены ‖ Notifications are blocked ‖ Las notificaciones están bloqueadas ‖ As notificações estão bloqueadas ‖ Сповіщення заборонено
+Разрешить уведомления ‖ Allow notifications ‖ Permitir notificaciones ‖ Permitir notificações ‖ Дозволити сповіщення
+Разрешите их в настройках браузера или телефона ‖ Allow them in the browser or phone settings ‖ Permítelas en los ajustes del navegador o del teléfono ‖ Permita-as nas configurações do navegador ou do telefone ‖ Дозвольте їх у налаштуваннях браузера чи телефона
+Чтобы видеть новые сообщения, когда приложение свёрнуто ‖ To see new messages while the app is minimised ‖ Para ver mensajes nuevos con la aplicación minimizada ‖ Para ver novas mensagens com o app minimizado ‖ Щоб бачити нові повідомлення, коли застосунок згорнуто
+Личные чаты ‖ Private chats ‖ Chats privados ‖ Chats privados ‖ Особисті чати
+Уведомления о сообщениях ‖ Message notifications ‖ Notificaciones de mensajes ‖ Notificações de mensagens ‖ Сповіщення про повідомлення
+Группы ‖ Groups ‖ Grupos ‖ Grupos ‖ Групи
+Каналы ‖ Channels ‖ Canales ‖ Canais ‖ Канали
+Уведомления о публикациях ‖ Post notifications ‖ Notificaciones de publicaciones ‖ Notificações de publicações ‖ Сповіщення про публікації
+Чаты с отключённым звуком в Telegram не присылают уведомлений. ‖ Chats muted in Telegram do not send notifications. ‖ Los chats silenciados en Telegram no envían notificaciones. ‖ Chats silenciados no Telegram não enviam notificações. ‖ Чати з вимкненим звуком у Telegram не надсилають сповіщень.
+Предпросмотр сообщений ‖ Message preview ‖ Vista previa de mensajes ‖ Pré-visualização de mensagens ‖ Попередній перегляд повідомлень
+Показывать текст в уведомлении ‖ Show the text in the notification ‖ Mostrar el texto en la notificación ‖ Mostrar o texto na notificação ‖ Показувати текст у сповіщенні
+Звуки уведомлений и в приложении ‖ Notification and in-app sounds ‖ Sonidos de notificaciones y de la app ‖ Sons de notificações e do app ‖ Звуки сповіщень і в застосунку
+Счётчик на значке ‖ Badge counter ‖ Contador en el icono ‖ Contador no ícone ‖ Лічильник на значку
+Число непрочитанных чатов ‖ Number of unread chats ‖ Número de chats sin leer ‖ Número de chats não lidos ‖ Кількість непрочитаних чатів
+Параметры ‖ Options ‖ Opciones ‖ Opções ‖ Параметри
+Работа в фоне ‖ Background activity ‖ Ejecución en segundo plano ‖ Execução em segundo plano ‖ Робота у фоні
+Держать соединение, пока приложение свёрнуто ‖ Keep the connection while the app is minimised ‖ Mantener la conexión con la aplicación minimizada ‖ Manter a conexão com o app minimizado ‖ Тримати з’єднання, поки застосунок згорнуто
+Без этого Android может остановить приложение, и уведомления перестанут приходить. В шторке будет постоянный значок. ‖ Without it Android may stop the app and notifications will stop arriving. A permanent icon appears in the shade. ‖ Sin esto Android puede detener la aplicación y las notificaciones dejarán de llegar. Aparecerá un icono permanente en la barra. ‖ Sem isso o Android pode parar o app e as notificações deixarão de chegar. Um ícone permanente aparece na barra. ‖ Без цього Android може зупинити застосунок, і сповіщення перестануть надходити. У шторці буде постійний значок.

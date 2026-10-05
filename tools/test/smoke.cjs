@@ -92,6 +92,19 @@ function serve() {
           chats ? ok('Back from a tab returns to Chats') : fail('Back did not return to Chats');
           await page.click('.cx-row[data-id="u1000"]'); await page.waitForSelector('.cx-msg');
         }
+        if (code === 'ru') {
+          // notifications: an incoming message in a chat that is not open shows one; a muted chat does not
+          const shown = await page.evaluate(async () => {
+            const got = [];
+            window.Notification = class { constructor(title, o) { got.push([title, o.body]); } static get permission() { return 'granted'; } };
+            const mk = (chat, text) => ({ id: 777, chatId: chat, date: Math.floor(Date.now() / 1000), out: false, senderKey: 'u2', senderName: 'Anna', text, html: text, media: [], reactions: [], status: 'sent', service: null });
+            window.__fakeLive.onMessage(mk('u1004', 'привет из теста'), {});   // not open, not muted
+            window.__fakeLive.onMessage(mk('u1002', 'тихий чат'), {});          // muted in the demo data
+            await new Promise((r) => setTimeout(r, 300));
+            return got;
+          });
+          shown.length === 1 && shown[0][1].includes('привет из теста') ? ok('a notification is shown for a new message (and not for a muted chat)') : fail(`notifications: ${JSON.stringify(shown)}`);
+        }
         await page.click('.cx-back');
         for (const tab of ['contacts', 'settings', 'profile', 'chats']) { await page.click(`[data-tab="${tab}"]`); await page.waitForTimeout(120); }
         ok('tabs switch');

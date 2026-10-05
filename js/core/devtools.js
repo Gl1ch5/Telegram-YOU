@@ -46,13 +46,13 @@ export function clearLogs() {
 }
 
 export function nativeVersion() {
-  const m = /TeleXAndroid\/([\w.]+)/.exec(navigator.userAgent);
+  const m = /TelegramYouAndroid\/([\w.]+)/.exec(navigator.userAgent);
   if (m) return `Android ${m[1]}`;
   return /Electron/.test(navigator.userAgent) ? 'Windows (Electron)' : null;
 }
 
 export function isAndroidApp() {
-  return /TeleXAndroid\//.test(navigator.userAgent);
+  return /TelegramYouAndroid\//.test(navigator.userAgent);
 }
 
 export function postNative(message) {

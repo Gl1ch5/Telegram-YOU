@@ -21,6 +21,7 @@ import { workerMode } from '../tg.js';
 import { nativeVersion, isAndroidApp, postNative, logCount, diagnostics, exportLogs, clearLogs, hardReload } from '../core/devtools.js';
 import { t, LANGUAGES, lang } from '../i18n.js';
 import { listMods, installMod, removeMod, setModEnabled } from '../ui/mods.js';
+import { notifySupported, notifyPermission, askNotifyPermission, syncBackgroundService, updateBadge } from '../ui/notify.js';
 
 const root = () => document.getElementById('settings-root');
 let page = 'root';
@@ -37,7 +38,7 @@ export function openSettingsPage(name) {
 function render() {
   const el = root();
   if (!el) return;
-  const pages = { root: rootPage, power: powerPage, chat: chatPage, appearance: chatPage, theme: themePage, language: languagePage, namecolor: nameColorPage, data: dataPage, devices: devicesPage, mods: modsPage, about: aboutPage, developer: developerPage };
+  const pages = { root: rootPage, power: powerPage, chat: chatPage, appearance: chatPage, theme: themePage, language: languagePage, namecolor: nameColorPage, data: dataPage, devices: devicesPage, notify: notifyPage, mods: modsPage, about: aboutPage, developer: developerPage };
   el.innerHTML = (pages[page] || rootPage)();
   if (page === 'devices') loadSessions();
   if (page === 'data') loadStorage();
@@ -68,6 +69,7 @@ function rootPage() {
       ${group(
         (u ? row({ icon: 'st-account', color: 'BLUE', title: t('Аккаунт'), sub: t('Имя, «О себе», фото профиля'), onclick: "window.TelegramX.setView('profile')" }) : '') +
         row({ icon: 'st-chat', color: 'ORANGE', title: t('Настройки чатов'), sub: t('Обои, ночной режим, анимации'), onclick: "window.TelegramX.openSettingsPage('chat')" }) +
+        row({ icon: 'st-sounds', color: 'RED', title: t('Уведомления и звуки'), sub: t('Чаты, предпросмотр, звук'), onclick: "window.TelegramX.openSettingsPage('notify')" }) +
         row({ icon: 'st-data', color: 'BLUE_DEEP', title: t('Данные и память'), sub: t('Автозагрузка медиа, кэш'), onclick: "window.TelegramX.openSettingsPage('data')" }) +
         row({ icon: 'st-devices', color: 'CYAN', title: t('Устройства'), sub: t('Управление активными сеансами'), onclick: "window.TelegramX.openSettingsPage('devices')" }) +
         row({ icon: 'st-power', color: 'ORANGE_DEEP', title: t('Энергосбережение'), sub: p.reduceMotion ? t('Анимации выключены') : t('Анимации и автовоспроизведение'), onclick: "window.TelegramX.openSettingsPage('power')" }) +
@@ -600,3 +602,41 @@ export async function installModFile(input) {
     if (await installMod(JSON.parse(await file.text()))) { showToast(t('Мод установлен')); render(); }
   } catch (e) { showToast(String(e.message || e)); }
 }
+
+const isAndroidApp2 = () => /TelegramYouAndroid/.test(navigator.userAgent);
+
+function notifyPage() {
+  const p = getPrefs();
+  const perm = notifyPermission();
+  const need = notifySupported() && perm !== 'granted';
+  return `
+    ${titleBar(t('Уведомления и звуки'), { back: true })}
+    <div class="tx-page">
+      ${need ? group(
+        row({ icon: 'st-sounds', color: 'RED', title: perm === 'denied' ? t('Уведомления запрещены') : t('Разрешить уведомления'), sub: perm === 'denied' ? t('Разрешите их в настройках браузера или телефона') : t('Чтобы видеть новые сообщения, когда приложение свёрнуто'), onclick: perm === 'denied' ? '' : 'window.TelegramX.askNotify()' }),
+      ) : ''}
+      ${group(
+        switchRow({ title: t('Личные чаты'), sub: t('Уведомления о сообщениях'), checked: p.notifyPrivate, onchange: "window.TelegramX.setPref('notifyPrivate', this.checked)" }) +
+        switchRow({ title: t('Группы'), sub: t('Уведомления о сообщениях'), checked: p.notifyGroups, onchange: "window.TelegramX.setPref('notifyGroups', this.checked)" }) +
+        switchRow({ title: t('Каналы'), sub: t('Уведомления о публикациях'), checked: p.notifyChannels, onchange: "window.TelegramX.setPref('notifyChannels', this.checked)" }),
+        { title: t('Уведомления о сообщениях'), hint: t('Чаты с отключённым звуком в Telegram не присылают уведомлений.') },
+      )}
+      ${group(
+        switchRow({ title: t('Предпросмотр сообщений'), sub: t('Показывать текст в уведомлении'), checked: p.notifyPreview, onchange: "window.TelegramX.setPref('notifyPreview', this.checked)" }) +
+        switchRow({ title: t('Звук'), sub: t('Звуки уведомлений и в приложении'), checked: p.notifySound, onchange: "window.TelegramX.setPref('notifySound', this.checked)" }) +
+        switchRow({ title: t('Счётчик на значке'), sub: t('Число непрочитанных чатов'), checked: p.notifyBadge, onchange: "window.TelegramX.setPref('notifyBadge', this.checked); window.TelegramX.refreshBadge()" }),
+        { title: t('Параметры') },
+      )}
+      ${isAndroidApp2() ? group(
+        switchRow({ title: t('Работа в фоне'), sub: t('Держать соединение, пока приложение свёрнуто'), checked: p.bgService, onchange: "window.TelegramX.setPref('bgService', this.checked); window.TelegramX.syncBg()" }),
+        { hint: t('Без этого Android может остановить приложение, и уведомления перестанут приходить. В шторке будет постоянный значок.') },
+      ) : ''}
+    </div>`;
+}
+
+export async function askNotify() {
+  await askNotifyPermission();
+  rerenderSettings();
+}
+export function syncBg() { syncBackgroundService(); }
+export function refreshBadge() { import('../ui/list.js').then((m) => updateBadge(m.totalUnread())); }
