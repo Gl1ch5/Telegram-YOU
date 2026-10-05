@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..', '..', '..');
 const out = path.resolve(__dirname, '..', 'web');
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
-for (const item of ['index.html', 'manifest.webmanifest', 'sw.js', 'css', 'js', 'icons', 'wallpapers']) {
+for (const item of ['index.html', 'manifest.webmanifest', 'precache.json', 'sw.js', 'css', 'js', 'icons', 'wallpapers', 'fonts']) {
   fs.cpSync(path.join(root, item), path.join(out, item), { recursive: true });
 }
 

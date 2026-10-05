@@ -2,9 +2,12 @@ name: Android APK
 
 on:
   push:
-    branches: [main]
-    paths: ['native/android/**', 'index.html', 'sw.js', 'manifest.webmanifest', 'css/**', 'js/**', 'icons/**', 'wallpapers/**', '.github/workflows/android.yml']
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to (re)build and publish, e.g. v1.0.0 (rebuilding an old tag is how you roll back the published files)'
+        required: false
 
 permissions:
   contents: write
@@ -18,13 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Version
         id: v
         run: |
           VER=$(grep -oP "APP_VERSION\s*=\s*'\K[^']+" js/version.js)
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          if [ "v$VER" != "$TAG" ]; then echo "::error::tag $TAG does not match APP_VERSION $VER in js/version.js"; exit 1; fi
+          IFS=. read -r MA MI PA <<< "$VER"
           echo "name=$VER" >> "$GITHUB_OUTPUT"
-          echo "Telegram You $VER"
+          echo "code=$((MA * 10000 + MI * 100 + PA))" >> "$GITHUB_OUTPUT"
+          echo "Telegram You $VER (versionCode $((MA * 10000 + MI * 100 + PA)))"
 
       - uses: actions/setup-java@v4
         with:
@@ -36,7 +45,7 @@ jobs:
       - name: Build debug APK (the web app is packed inside)
         working-directory: native/android
         env:
-          TY_VERSION_CODE: ${{ github.run_number }}
+          TY_VERSION_CODE: ${{ steps.v.outputs.code }}
           TY_VERSION_NAME: ${{ steps.v.outputs.name }}
         run: |
           chmod +x gradlew
@@ -55,7 +64,7 @@ jobs:
         if: steps.keystore.outputs.enabled == 'true'
         working-directory: native/android
         env:
-          TY_VERSION_CODE: ${{ github.run_number }}
+          TY_VERSION_CODE: ${{ steps.v.outputs.code }}
           TY_VERSION_NAME: ${{ steps.v.outputs.name }}
           TY_KEYSTORE_FILE: ${{ runner.temp }}/ty-release.jks
           TY_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -73,7 +82,7 @@ jobs:
           cp "dist/TelegramYou-$VER.apk" dist/TelegramYou.apk
           cat > dist/version.json <<JSON
           {
-            "versionCode": ${{ github.run_number }},
+            "versionCode": ${{ steps.v.outputs.code }},
             "versionName": "$VER",
             "apk": "https://github.com/${{ github.repository }}/releases/download/v$VER/TelegramYou-$VER.apk",
             "commit": "${{ github.sha }}"

@@ -24,7 +24,7 @@
 - **Android** — `TelegramYou-<версия>.apk` (Android 7.0+). Весь интерфейс внутри APK: открывается мгновенно и без сети; приложение само находит обновления.
 - **Windows** — `TelegramYou-Setup-<версия>.exe` (установщик) и `TelegramYou-Portable-<версия>.exe`. Файлы не подписаны: SmartScreen спросит один раз («Подробнее» → «Выполнить в любом случае»).
 
-Версия задаётся в одном месте — `js/version.js` (`APP_VERSION`); она показывается в Настройках → «О Telegram You» и попадает в имена файлов. Новая версия = поменять число и запушить в `main`: CI соберёт APK и Windows-приложение и выложит релиз `v<версия>`.
+Версия задаётся в одном месте — `js/version.js` (`APP_VERSION`) и управляется через git-теги: `npm run release -- minor && git push origin main --follow-tags` — CI соберёт APK, Windows-приложение, сайт и выложит релиз `v<версия>`. Откат, ветки и правила — в [docs/RELEASING.md](docs/RELEASING.md), список изменений — [CHANGELOG.md](CHANGELOG.md).
 
 Сборка вручную: `cd native/android && ./gradlew assembleDebug` (JDK 17) и `cd native/desktop && npm install && npm run dist:win`.
 

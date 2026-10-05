@@ -1,7 +1,9 @@
 name: Deploy to GitHub Pages
+# The site is the latest release tag. To roll the site back: Actions → this workflow → Run workflow → pick an older tag.
 on:
   push:
-    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
 permissions: { contents: read, pages: write, id-token: write }
 concurrency: { group: pages, cancel-in-progress: true }
 jobs:
@@ -10,7 +12,7 @@ jobs:
     environment: { name: github-pages, url: '${{ steps.deployment.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v4
-      - run: mkdir _site && cp -r index.html manifest.webmanifest sw.js css js icons wallpapers _site/
+      - run: mkdir _site && cp -r index.html manifest.webmanifest precache.json sw.js css js icons wallpapers fonts _site/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: _site }

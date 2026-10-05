@@ -2,12 +2,14 @@
   "name": "telegram-you",
   "version": "1.0.0",
   "private": true,
-  "description": "Telegram You — an unofficial web client that copies Telegram for Android. Static files, no backend.",
+  "description": "Telegram You \u2014 an unofficial web client that copies Telegram for Android. Static files, no backend.",
   "scripts": {
     "serve": "python3 -m http.server 8765",
-    "test": "node tools/test/smoke.cjs",
+    "test": "node tools/build-precache.mjs --check && node tools/test/smoke.cjs",
     "i18n": "node tools/i18n/extract.mjs && node tools/i18n/build.mjs",
-    "build:gramjs": "cd tools/gramjs && npm ci && node build.mjs ../../js/vendor/gramjs.js"
+    "build:gramjs": "cd tools/gramjs && npm ci && node build.mjs ../../js/vendor/gramjs.js",
+    "precache": "node tools/build-precache.mjs",
+    "release": "node tools/release.mjs"
   },
   "devDependencies": {
     "acorn": "^8.17.0",

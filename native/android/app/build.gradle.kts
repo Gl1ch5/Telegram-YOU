@@ -60,7 +60,7 @@ android {
 val webOut = layout.buildDirectory.dir("generated/web")
 val copyWeb by tasks.registering(Copy::class) {
     from(rootProject.projectDir.resolve("../..")) {
-        include("index.html", "manifest.webmanifest", "sw.js", "css/**", "js/**", "icons/**", "wallpapers/**")
+        include("index.html", "manifest.webmanifest", "precache.json", "sw.js", "css/**", "js/**", "icons/**", "wallpapers/**", "fonts/**")
     }
     into(webOut)
 }

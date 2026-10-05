@@ -5,6 +5,9 @@
 ## Цель
 Точная копия **Telegram для Android** в вебе: пользователь не должен заметить разницу. «Похоже» — недостаточно; сверяем размеры, цвета, иконки и поведение с оригиналом по скриншотам. Всё, что не повторяет оригинал, считается дефектом.
 
+## Версии и git
+См. `docs/RELEASING.md`. Коротко: работаем в ветках (`feat/…`, `fix/…`) через PR, `main` всегда зелёный, версию меняет только `npm run release` (тег `vX.Y.Z` → CI собирает APK, Windows и сайт), откат — `git revert` + новый patch-релиз, изменения записываем в `CHANGELOG.md` → `[Unreleased]`. После правок файлов приложения запускать `npm run precache`.
+
 ## Правила
 1. **Копируем оригинал.** Иконки и анимации берём только из Telegram для Android (`icons/android`, `icons/tabs`; новые добавляем скриптом `tools/icons/extract-chat.py` из клона DrKLO/Telegram). Не рисуем свои, если есть оригинал.
 2. **Мерим, а не прикидываем.** Сравнение: скриншот телефона и скриншот клиента в окне того же размера (ширина кадра телефона / масштаб экрана), рядом. Размеры в `css/chat.css` (блок «Measured from Telegram…») — результат такого замера; см. `docs/fidelity.md`.
@@ -47,7 +50,8 @@ js/tg.js → js/telegram-remote.js ⇄ js/tg-worker.js → js/telegram.js (+ js/
 ## Приложения (Android и Windows)
 - `native/android`: WebView, веб-файлы пакуются в `assets/` (Gradle-задача `copyWeb`) и отдаются через `WebViewAssetLoader` по адресу `https://appassets.androidplatform.net/app/`; запросы Service Worker тоже идут через загрузчик (`ServiceWorkerClientCompat`). Мост `window.TeleXNative.postMessage` — тема, загрузки, обновления.
 - `native/desktop`: Electron, файлы копирует `scripts/copy-web.js` в `web/` и отдаёт схема `tgyou://app/` (secure + allowServiceWorkers).
-- Версия — только `js/version.js` (`APP_VERSION`); `sw.js` держим в том же значении (`SW_VERSION`). CI (`android.yml`, `windows.yml`) берёт версию оттуда и публикует релиз `v<версия>`.
+- Версия — только `js/version.js` (`APP_VERSION`); её меняет `npm run release`. CI (`android.yml`, `windows.yml`, `pages.yml`) запускается по тегу `v*`, сверяет его с версией и публикует релиз.
+- Важно: в Android WebView запрос, который Service Worker пропустил «в сеть», не доходит до файлов внутри приложения. Поэтому `sw.js` отдаёт ВСЕ файлы приложения сам (precache, cache-first); список файлов — `precache.json` (`npm run precache`).
 
 ## Что делать дальше
 См. `docs/roadmap.md`. Порядок работы над новым экраном: скриншот оригинала → замер → вёрстка → иконки из оригинала → переводы → тест → сравнение рядом → коммит.

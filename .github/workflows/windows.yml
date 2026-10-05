@@ -2,9 +2,12 @@ name: Windows (Telegram You desktop)
 
 on:
   push:
-    branches: [main]
-    paths: ['native/desktop/**', 'index.html', 'sw.js', 'manifest.webmanifest', 'css/**', 'js/**', 'icons/**', 'wallpapers/**', '.github/workflows/windows.yml']
+    tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to (re)build and publish, e.g. v1.0.0 (rebuilding an old tag is how you roll back the published files)'
+        required: false
 
 permissions:
   contents: write
@@ -23,10 +26,20 @@ jobs:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false' # no code signing (SmartScreen asks once)
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Check the tag matches the version
+        shell: bash
+        working-directory: .
+        run: |
+          VER=$(grep -oP "APP_VERSION\s*=\s*'\K[^']+" js/version.js)
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          if [ "v$VER" != "$TAG" ]; then echo "::error::tag $TAG does not match APP_VERSION $VER in js/version.js"; exit 1; fi
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
