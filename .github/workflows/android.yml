@@ -28,7 +28,8 @@ jobs:
         id: v
         run: |
           VER=$(grep -oP "APP_VERSION\s*=\s*'\K[^']+" js/version.js)
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          TAG="${{ github.event.inputs.tag }}"
+          if [ -z "$TAG" ]; then if [ "${{ github.ref_type }}" = tag ]; then TAG="${{ github.ref_name }}"; else TAG="v$VER"; fi; fi
           if [ "v$VER" != "$TAG" ]; then echo "::error::tag $TAG does not match APP_VERSION $VER in js/version.js"; exit 1; fi
           IFS=. read -r MA MI PA <<< "$VER"
           echo "name=$VER" >> "$GITHUB_OUTPUT"
