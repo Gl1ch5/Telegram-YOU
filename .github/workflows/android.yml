@@ -1,0 +1,102 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['native/android/**', 'index.html', 'sw.js', 'manifest.webmanifest', 'css/**', 'js/**', 'icons/**', 'wallpapers/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        id: v
+        run: |
+          VER=$(grep -oP "APP_VERSION\s*=\s*'\K[^']+" js/version.js)
+          echo "name=$VER" >> "$GITHUB_OUTPUT"
+          echo "Telegram You $VER"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK (the web app is packed inside)
+        working-directory: native/android
+        env:
+          TY_VERSION_CODE: ${{ github.run_number }}
+          TY_VERSION_NAME: ${{ steps.v.outputs.name }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Prepare release keystore
+        id: keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "enabled=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/ty-release.jks"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed release APK
+        if: steps.keystore.outputs.enabled == 'true'
+        working-directory: native/android
+        env:
+          TY_VERSION_CODE: ${{ github.run_number }}
+          TY_VERSION_NAME: ${{ steps.v.outputs.name }}
+          TY_KEYSTORE_FILE: ${{ runner.temp }}/ty-release.jks
+          TY_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          TY_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          TY_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Collect files
+        run: |
+          VER=${{ steps.v.outputs.name }}
+          mkdir -p dist
+          rel=native/android/app/build/outputs/apk/release/app-release.apk
+          dbg=native/android/app/build/outputs/apk/debug/app-debug.apk
+          if [ -f "$rel" ]; then cp "$rel" "dist/TelegramYou-$VER.apk"; else cp "$dbg" "dist/TelegramYou-$VER.apk"; fi
+          cp "dist/TelegramYou-$VER.apk" dist/TelegramYou.apk
+          cat > dist/version.json <<JSON
+          {
+            "versionCode": ${{ github.run_number }},
+            "versionName": "$VER",
+            "apk": "https://github.com/${{ github.repository }}/releases/download/v$VER/TelegramYou-$VER.apk",
+            "commit": "${{ github.sha }}"
+          }
+          JSON
+          ls -la dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TelegramYou-android
+          path: dist/*.apk
+          if-no-files-found: error
+
+      - name: Make sure the release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=${{ steps.v.outputs.name }}
+          gh release view "v$VER" >/dev/null 2>&1 || gh release create "v$VER" --title "Telegram You $VER" --notes "Telegram You $VER: Android (APK) and Windows (installer, portable). The web app is packed inside, so the interface opens instantly." --target "${{ github.sha }}" || gh release view "v$VER" >/dev/null
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=${{ steps.v.outputs.name }}
+          gh release upload "v$VER" "dist/TelegramYou-$VER.apk" dist/TelegramYou.apk dist/version.json --clobber

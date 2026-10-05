@@ -1,0 +1,70 @@
+name: Windows (Telegram You desktop)
+
+on:
+  push:
+    branches: [main]
+    paths: ['native/desktop/**', 'index.html', 'sw.js', 'manifest.webmanifest', 'css/**', 'js/**', 'icons/**', 'wallpapers/**', '.github/workflows/windows.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: native/desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false' # no code signing (SmartScreen asks once)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Pack the web app and build installer + portable
+        run: npm run dist:win
+
+      - name: Version
+        id: v
+        shell: pwsh
+        run: |
+          $ver = (Get-Content package.json | ConvertFrom-Json).version
+          "name=$ver" >> $env:GITHUB_OUTPUT
+          foreach ($f in "dist/TelegramYou-Setup-$ver.exe", "dist/TelegramYou-Portable-$ver.exe") {
+            if (-not (Test-Path $f)) { throw "missing $f" }
+            Get-Item $f | Format-Table Name, Length
+          }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TelegramYou-Windows
+          path: |
+            native/desktop/dist/TelegramYou-Setup-*.exe
+            native/desktop/dist/TelegramYou-Portable-*.exe
+          if-no-files-found: error
+
+      - name: Make sure the release exists
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=${{ steps.v.outputs.name }}
+          gh release view "v$VER" >/dev/null 2>&1 || gh release create "v$VER" --title "Telegram You $VER" --notes "Telegram You $VER: Android (APK) and Windows (installer, portable). The web app is packed inside, so the interface opens instantly." --target "${{ github.sha }}" || gh release view "v$VER" >/dev/null
+
+      - name: Upload to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=${{ steps.v.outputs.name }}
+          gh release upload "v$VER" "dist/TelegramYou-Setup-$VER.exe" "dist/TelegramYou-Portable-$VER.exe" --clobber

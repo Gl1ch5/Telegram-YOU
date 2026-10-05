@@ -18,6 +18,16 @@
 - Русский, английский, испанский, португальский, украинский; светлая и тёмная тема по устройству.
 - Расширения (моды): ES-модули с полным доступом к API, подключаются через точки расширения.
 
+## Приложения
+
+Релиз с версией лежит в [Releases](https://github.com/Gl1ch5/Telegram-YOU/releases/latest):
+- **Android** — `TelegramYou-<версия>.apk` (Android 7.0+). Весь интерфейс внутри APK: открывается мгновенно и без сети; приложение само находит обновления.
+- **Windows** — `TelegramYou-Setup-<версия>.exe` (установщик) и `TelegramYou-Portable-<версия>.exe`. Файлы не подписаны: SmartScreen спросит один раз («Подробнее» → «Выполнить в любом случае»).
+
+Версия задаётся в одном месте — `js/version.js` (`APP_VERSION`); она показывается в Настройках → «О Telegram You» и попадает в имена файлов. Новая версия = поменять число и запушить в `main`: CI соберёт APK и Windows-приложение и выложит релиз `v<версия>`.
+
+Сборка вручную: `cd native/android && ./gradlew assembleDebug` (JDK 17) и `cd native/desktop && npm install && npm run dist:win`.
+
 ## Запуск
 
 ```bash
@@ -46,6 +56,7 @@ npm run i18n         # проверка и сборка словарей (tools/
 | `js/telegram-remote.js`, `js/tg-worker.js` | тот же движок в Web Worker |
 | `sw.js`, `js/media.js` | Service Worker и мост загрузки медиа |
 | `icons/android/`, `icons/tabs/` | оригинальные ресурсы Telegram для Android |
+| `native/android`, `native/desktop` | оболочки: APK (WebView) и Windows (Electron), веб-часть упакована внутрь |
 | `tools/` | сборка GramJS, переводы, извлечение иконок, тесты |
 | `docs/` | [архитектура](docs/architecture.md), [дорожная карта](docs/roadmap.md), [заметки по API](docs/telegram-api.md), [тестирование](docs/testing.md), [точность копии](docs/fidelity.md) |
 

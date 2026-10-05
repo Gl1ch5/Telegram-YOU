@@ -1,0 +1,67 @@
+{
+  "name": "telegram-you-desktop",
+  "productName": "Telegram You",
+  "version": "1.0.0",
+  "description": "Telegram You desktop: the web app packed into a native window",
+  "author": "Gl1ch5",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gl1ch5/Telegram-YOU.git"
+  },
+  "private": true,
+  "main": "src/main.js",
+  "scripts": {
+    "start": "npm run web && electron .",
+    "web": "node scripts/copy-web.js",
+    "icons": "node scripts/make-icons.js",
+    "dist:win": "npm run web && electron-builder --win nsis portable --x64 --publish never",
+    "dist:dir": "npm run web && electron-builder --dir --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "io.github.gl1ch5.telegramyou",
+    "productName": "Telegram You",
+    "copyright": "Telegram You",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "web/**/*",
+      "build/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Telegram You",
+      "artifactName": "TelegramYou-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "TelegramYou-Portable-${version}.${ext}"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "target": [
+        "dir"
+      ],
+      "category": "Network"
+    }
+  }
+}

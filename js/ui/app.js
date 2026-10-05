@@ -1,5 +1,6 @@
 // Telegram You — boot: appearance, language, auth, tabs, live updates.
-import { applyAppearance, getPrefs, onPrefsChange } from '../core/prefs.js';
+import { applyAppearance, getPrefs, onPrefsChange, resolvedTheme } from '../core/prefs.js';
+import { postNative } from '../core/devtools.js';
 import { applyDocumentLanguage, translateTree } from '../i18n.js';
 import { S, t, on, avatar } from './store.js';
 import { I } from './icons.js';
@@ -115,10 +116,11 @@ async function start() {
 async function init() {
   applyDocumentLanguage();
   applyAppearance();
+  postNative('theme:' + resolvedTheme()); // Android/Windows shells follow the theme (status bar icons)
   initWallpaperEngine();
   translateTree(document.body);
-  try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (getPrefs().theme === 'auto') applyAppearance(); }); } catch {}
-  onPrefsChange((p) => applyAppearance(p));
+  try { matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => { if (getPrefs().theme === 'auto') { applyAppearance(); postNative('theme:' + resolvedTheme()); } }); } catch {}
+  onPrefsChange((p) => { applyAppearance(p); postNative('theme:' + resolvedTheme(p)); });
 
   S.tg = await pickService();
   const authModal = (fn) => (...a) => import('../components/authModal.js').then((m) => m[fn](...a));

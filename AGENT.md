@@ -44,6 +44,11 @@ js/tg.js → js/telegram-remote.js ⇄ js/tg-worker.js → js/telegram.js (+ js/
 - `wallpapers/*` — обои с рисунком Telegram.
 - Обновление/добавление: `git clone --depth 1 https://github.com/DrKLO/telegram`, затем `python3 tools/icons/extract-chat.py <путь к клону>` (добавьте имена в список `NAMES`).
 
+## Приложения (Android и Windows)
+- `native/android`: WebView, веб-файлы пакуются в `assets/` (Gradle-задача `copyWeb`) и отдаются через `WebViewAssetLoader` по адресу `https://appassets.androidplatform.net/app/`; запросы Service Worker тоже идут через загрузчик (`ServiceWorkerClientCompat`). Мост `window.TeleXNative.postMessage` — тема, загрузки, обновления.
+- `native/desktop`: Electron, файлы копирует `scripts/copy-web.js` в `web/` и отдаёт схема `tgyou://app/` (secure + allowServiceWorkers).
+- Версия — только `js/version.js` (`APP_VERSION`); `sw.js` держим в том же значении (`SW_VERSION`). CI (`android.yml`, `windows.yml`) берёт версию оттуда и публикует релиз `v<версия>`.
+
 ## Что делать дальше
 См. `docs/roadmap.md`. Порядок работы над новым экраном: скриншот оригинала → замер → вёрстка → иконки из оригинала → переводы → тест → сравнение рядом → коммит.
 
