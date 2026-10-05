@@ -695,6 +695,11 @@
   "plural": false
  },
  {
+  "key": "Черновик",
+  "where": "js/ui/list.js",
+  "plural": false
+ },
+ {
   "key": "{a} печатает…",
   "where": "js/ui/list.js",
   "plural": false
@@ -740,17 +745,27 @@
   "plural": false
  },
  {
+  "key": "Истории",
+  "where": "js/ui/list.js",
+  "plural": false
+ },
+ {
+  "key": "Камера",
+  "where": "js/ui/list.js",
+  "plural": false
+ },
+ {
   "key": "Новое сообщение",
   "where": "js/ui/list.js",
   "plural": false
  },
  {
-  "key": "Прочитать все",
+  "key": "Скоро",
   "where": "js/ui/list.js",
   "plural": false
  },
  {
-  "key": "Скоро",
+  "key": "Прочитать все",
   "where": "js/ui/list.js",
   "plural": false
  },

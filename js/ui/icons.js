@@ -85,7 +85,9 @@ const FILES = {
   camera: 'msg_camera.webp', fab: 'filled_fab_compose_32.svg', newmsg: 'profile_newmsg.webp', list: 'msg_pinnedlist.webp', contactsTab: 'msg_contacts.webp',
   chatsTab: 'settings_chat.svg', settingsTab: 'msg_settings.webp',
 };
-const mask = (file, cls = '') => `<span class="ic ${cls}" style="--m:url(icons/android/${file})"></span>`;
+// Absolute URL on purpose: inside var() a relative url() is resolved against the stylesheet (css/), not the page.
+const BASE = new URL('icons/android/', document.baseURI).href;
+const mask = (file, cls = '') => `<span class="ic ${cls}" style="--m:url(${BASE}${file})"></span>`;
 
 export const I = { ...SVG };
 for (const [k, f] of Object.entries(FILES)) I[k] = mask(f);

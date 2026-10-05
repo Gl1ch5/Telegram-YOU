@@ -18,6 +18,28 @@ const dialogs = Array.from({ length: 60 }, (_, i) => {
     last: { id: 100, text: TEXTS[i % TEXTS.length], out, senderName: kind === 'group' ? (out ? 'Вы' : 'Дмитрий') : '' },
   };
 });
+
+// ?scene=ref: the same rows as the reference screenshot of Telegram for Android (used to compare pixels)
+const REF = [
+  ['G', 'user', { pinned: true, last: '', draft: true, time: '15:34' }],
+  ['Избранное', 'user', { pinned: true, self: true, last: 'telex.web.ru@gmail.com', time: '14:15' }],
+  ['Telegram', 'user', { verified: true, last: 'Вход с нового устройства. Pavel, мы заметили вход', time: '16:43' }],
+  ['Систер', 'user', { out: true, read: true, last: 'Ща', time: '16:15' }],
+  ['Лизаветта', 'user', { last: 'спасибо', time: '12 сент.' }],
+  ['Поддержка | Stars & VPN', 'user', { draft: true, last: '<lambda_2>@?1??new_do…', time: '06 сент.' }],
+  ['Evelina', 'user', { muted: true, last: 'Спасибо', time: '20 авг.' }],
+  ['Удалённый аккаунт', 'user', { last: 'Здесь вы можете создавать посты', time: '06 авг.' }],
+  ['Sofia Fedorovna', 'user', { last: 'Привет', time: '12 мая' }],
+];
+if (new URLSearchParams(location.search).get('scene') === 'ref') {
+  dialogs.length = 0;
+  REF.forEach(([title, kind, o], i) => dialogs.push({
+    id: `u${2000 + i}`, kind, title, username: '', avatar: null, verified: !!o.verified, bot: false, self: !!o.self, muted: !!o.muted, pinned: !!o.pinned, archived: false,
+    unread: 0, unreadMentions: 0, markedUnread: false, readInboxMaxId: 0, readOutboxMaxId: o.read ? 100 : 0, topId: 100, date: now - i * 3600,
+    status: { kind: 'recently' }, hasDraft: !!o.draft, draftText: o.draft ? o.last : '', dateText: o.time,
+    last: { id: 100, text: o.last, out: !!o.out, senderName: '' },
+  }));
+}
 const history = (key) => {
   const out = [];
   for (let i = 0; i < 80; i++) {
@@ -45,7 +67,8 @@ export const fake = {
     const page = dialogs.slice(from, from + limit);
     return { dialogs: page, hasMore: from + limit < dialogs.length, cursor: { i: from + limit } };
   },
-  async chatFolders() { return []; },
+  async chatFolders() { return new URLSearchParams(location.search).get('scene') === 'ref' ? [{ id: 1, title: 'Личные', include: [], exclude: [], contacts: true, nonContacts: true }, { id: 2, title: 'Новые', include: [], exclude: [], groups: true }] : []; },
+  async getStories() { return new URLSearchParams(location.search).get('scene') === 'ref' ? [1, 2, 3].map((i) => ({ id: i, name: 'S' + i, avatar: null, unread: true })) : []; },
   async chatHistory(key, { offsetId = 0, limit = 40 } = {}) {
     const all = history(key).filter((m) => !offsetId || m.id < offsetId);
     const page = all.slice(-limit);

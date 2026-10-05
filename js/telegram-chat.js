@@ -104,6 +104,8 @@ export function installChat(TelegramService, helpers) {
       unread: d.unreadCount || 0,
       unreadMentions: d.unreadMentionsCount || 0,
       markedUnread: !!raw.unreadMark,
+      hasDraft: !!(d.draft && d.draft.text !== undefined && (d.draft.text || d.draft.replyToMsgId)),
+      draftText: d.draft && d.draft.text ? String(d.draft.text).replace(/\s+/g, ' ').slice(0, 140) : '',
       readInboxMaxId: raw.readInboxMaxId || 0,
       readOutboxMaxId: raw.readOutboxMaxId || 0,
       topId: raw.topMessage || (m ? m.id : 0),

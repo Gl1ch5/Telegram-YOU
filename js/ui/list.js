@@ -49,6 +49,7 @@ export async function loadFirst() {
   }
   S.loading = !S.order.length;
   render();
+  loadStoryPeers();
   try {
     const [page, folders] = await Promise.all([
       S.tg.chatDialogs({ limit: 40 }),
@@ -69,6 +70,15 @@ export async function loadFirst() {
   }
   S.loading = false;
   render();
+}
+
+/** People with stories: the little ringed stack left of the title (Telegram for Android). */
+async function loadStoryPeers() {
+  if (!S.tg.getStories) return;
+  try {
+    S.storyPeers = (await S.tg.getStories()).filter((x) => !x.is_self).slice(0, 3);
+    render(true);
+  } catch { S.storyPeers = []; }
 }
 
 async function loadMore() {
@@ -108,6 +118,7 @@ export const totalUnread = () => [...S.dialogs.values()].filter((d) => !d.archiv
 
 // ---------------------------------------------------------------- rendering
 function previewHtml(d) {
+  if (d.hasDraft) return `<span class="draft">${t('Черновик')}${d.draftText ? ':' : ''}</span>${d.draftText ? ' ' + escapeHtml(d.draftText) : ''}`;
   if (!d.last) return '';
   const typing = S.typing.get(d.id);
   if (typing && typing.until > Date.now()) return `<span style="color:var(--tx-accent)">${escapeHtml(typing.name ? t('{a} печатает…', { a: typing.name }) : t('печатает…'))}</span>`;
@@ -126,7 +137,7 @@ function rowHtml(d) {
   const av = d.self ? `<span class="cx-saved-ic">${I.saved}</span>` : avatar(d);
   const title = d.self ? t('Избранное') : d.title;
   const icons = (d.verified ? I.verified : '') + (d.muted ? `<span class="cx-name-ico">${I.mute}</span>` : '');
-  const date = listTime(d.date);
+  const date = d.dateText || listTime(d.date);
   const when = d.pinned
     ? `<span class="cx-date pinned">${I.pin}${escapeHtml(date)}</span>`
     : `<span class="cx-date">${ticks(d)}${escapeHtml(date)}</span>`;
@@ -185,7 +196,7 @@ export function render(keepScroll = false) {
   el.innerHTML = `
     <div class="cx-top">
       ${showArchive ? `<button class="cx-icon" data-act="unarch" aria-label="${t('Назад')}">${I.back}</button>` : ''}
-      ${showArchive ? '' : `<span class="cx-stack">${S.me ? avatar({ id: S.me.id, title: S.me.name, avatar: S.me.avatar }) : ''}</span>`}
+      ${showArchive || !(S.storyPeers && S.storyPeers.length) ? '' : `<button class="cx-stack ${S.storyPeers.some((x) => x.unread) ? 'unread' : ''}" data-act="stories" aria-label="${t('Истории')}">${S.storyPeers.map((x) => avatar({ id: x.id, title: x.name, avatar: x.avatar })).join('')}</button>`}
       <h1>${showArchive ? t('Архив чатов') : 'Telegram'}</h1>
       <button class="cx-icon" data-act="search" aria-label="${t('Поиск')}">${I.search}</button>
       <button class="cx-icon" data-act="menu" aria-label="${t('Меню')}">${I.more}</button>
@@ -193,7 +204,7 @@ export function render(keepScroll = false) {
     ${searchOpen ? `<div class="cx-search">${I.search}<input id="cx-q" placeholder="${t('Поиск')}" value="${escapeHtml(query)}" autocomplete="off"></div>` : ''}
     ${showArchive || searchOpen ? '' : foldersHtml()}
     <div class="cx-scroll" id="cx-list">${rows}</div>
-    ${showArchive ? '' : `<button class="cx-fab" data-act="new" aria-label="${t('Новое сообщение')}">${I.fab}</button>`}`;
+    ${showArchive ? '' : `<button class="cx-fab2" data-act="cam" aria-label="${t('Камера')}">${I.camera}</button><button class="cx-fab" data-act="new" aria-label="${t('Новое сообщение')}">${I.fab}</button>`}`;
   const sc = el.querySelector('.cx-scroll');
   if (keepScroll || top) sc.scrollTop = top;
   if (searchOpen) {
@@ -212,6 +223,7 @@ function onClick(e) {
     const a = act.dataset.act;
     if (a === 'search') { searchOpen = !searchOpen; query = ''; globalHits = []; render(); }
     else if (a === 'unarch') { showArchive = false; render(); }
+    else if (a === 'stories' || a === 'cam') toast(t('Скоро'));
     else if (a === 'new') emit('tab', 'contacts');
     else if (a === 'menu') {
       const r = act.getBoundingClientRect();

@@ -418,4 +418,8 @@ export const ES = {
   "Работа в фоне": "Ejecución en segundo plano",
   "Держать соединение, пока приложение свёрнуто": "Mantener la conexión con la aplicación minimizada",
   "Без этого Android может остановить приложение, и уведомления перестанут приходить. В шторке будет постоянный значок.": "Sin esto Android puede detener la aplicación y las notificaciones dejarán de llegar. Aparecerá un icono permanente en la barra.",
+  "Черновик": "Borrador",
+  "Истории": "Historias",
+  "Истории скоро": "Las historias llegarán pronto",
+  "Камера": "Cámara",
 };
