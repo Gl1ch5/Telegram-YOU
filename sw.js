@@ -8,8 +8,8 @@
  */
 
 const MEDIA_CACHE = 'telex-media-v1';
-const BUILD = '4ec8b2b2a0'; // replaced by tools/build-precache.mjs: changes with every file → a new worker
-const SW_VERSION = '1.0.0';
+const BUILD = '44240e01d0'; // replaced by tools/build-precache.mjs: changes with every file → a new worker
+const SW_VERSION = '1.1.0';
 const CACHEABLE = new Set(['avatar', 'avatarbig', 'photo', 'thumb', 'webpage', 'cemoji', 'cmedia', 'cthumb', 'storythumb', 'photofull', 'wallpaper']);
 const STREAMED = new Set(['doc', 'story']);
 

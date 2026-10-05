@@ -1,7 +1,7 @@
 {
   "name": "telegram-you-desktop",
   "productName": "Telegram You",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Telegram You desktop: the web app packed into a native window",
   "author": "Gl1ch5",
   "license": "MIT",
