@@ -419,5 +419,4 @@ Telegram You — неофициальный клиент. Работает на�
 Без этого Android может остановить приложение, и уведомления перестанут приходить. В шторке будет постоянный значок. ‖ Without it Android may stop the app and notifications will stop arriving. A permanent icon appears in the shade. ‖ Sin esto Android puede detener la aplicación y las notificaciones dejarán de llegar. Aparecerá un icono permanente en la barra. ‖ Sem isso o Android pode parar o app e as notificações deixarão de chegar. Um ícone permanente aparece na barra. ‖ Без цього Android може зупинити застосунок, і сповіщення перестануть надходити. У шторці буде постійний значок.
 Черновик ‖ Draft ‖ Borrador ‖ Rascunho ‖ Чернетка
 Истории ‖ Stories ‖ Historias ‖ Stories ‖ Історії
-Истории скоро ‖ Stories are coming soon ‖ Las historias llegarán pronto ‖ Stories em breve ‖ Історії скоро
 Камера ‖ Camera ‖ Cámara ‖ Câmera ‖ Камера

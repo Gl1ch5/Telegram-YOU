@@ -420,6 +420,5 @@ export const EN = {
   "Без этого Android может остановить приложение, и уведомления перестанут приходить. В шторке будет постоянный значок.": "Without it Android may stop the app and notifications will stop arriving. A permanent icon appears in the shade.",
   "Черновик": "Draft",
   "Истории": "Stories",
-  "Истории скоро": "Stories are coming soon",
   "Камера": "Camera",
 };
