@@ -1,6 +1,7 @@
 // Profile screen of a person / group / channel: photo, actions, info, shared media tabs, ⋮ menu.
 import { S, t, escapeHtml, mu, avatar, statusText, showMenu, confirmBox, toast, msgTime } from './store.js';
 import { I } from './icons.js';
+import { pushLayer, closeLayer } from './back.js';
 
 const TABS = () => [['media', t('Медиа')], ['files', t('Файлы')], ['links', t('Ссылки')], ['music', t('Музыка')], ['voice', t('Голосовые')], ['gif', 'GIF']];
 let state = null;
@@ -11,7 +12,7 @@ export async function openProfile(key, { onChat } = {}) {
   el.className = 'cx-profile';
   document.body.appendChild(el);
   state = { key, tab: 'media', el, info: { ...d, about: '', phone: '', status: d.status }, onChat };
-  history.pushState({ profile: key }, '');
+  pushLayer('profile', () => closeProfile(true));
   draw();
   try {
     const info = await S.tg.chatProfile(key);
@@ -25,9 +26,8 @@ export function closeProfile(fromPop = false) {
   if (!state) return;
   state.el.remove();
   state = null;
-  if (!fromPop && history.state && history.state.profile) history.back();
+  closeLayer('profile');
 }
-window.addEventListener('popstate', () => { if (state && !(history.state && history.state.profile)) closeProfile(true); });
 
 function draw() {
   if (!state) return;

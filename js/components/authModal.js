@@ -339,9 +339,20 @@ export function authQr() {
   generateQRLogin();
 }
 
-function renderQR(url) {
+let qrLib = null;
+const loadQr = () => qrLib || (qrLib = new Promise((res, rej) => {
+  if (window.QRCode) return res();
+  const s = document.createElement('script');
+  s.src = 'js/vendor/qrcode.min.js';
+  s.onload = () => res();
+  s.onerror = rej;
+  document.head.appendChild(s);
+}));
+
+async function renderQR(url) {
   const container = document.getElementById('qr-container');
   if (!container) return;
+  await loadQr();
   container.innerHTML = '';
   new QRCode(container, { text: url, width: 220, height: 220, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
 }

@@ -1,6 +1,7 @@
 // Emoji / GIF / Stickers panel under the composer (Telegram for Android layout).
 import { t, escapeHtml } from './store.js';
 import { I } from './icons.js';
+import { pushLayer, closeLayer } from './back.js';
 import { EMOJI_PICKER_LIST } from '../emoji.js';
 
 const GROUPS = [
@@ -16,6 +17,11 @@ const GROUPS = [
 let tab = 'emoji';
 
 export function closePanel() {
+  closeLayer('panel');
+  hidePanel();
+}
+
+function hidePanel() {
   const p = document.getElementById('cx-panel');
   if (p) { p.classList.add('tx-hidden'); p.innerHTML = ''; }
   const e = document.getElementById('cx-emo');
@@ -30,6 +36,7 @@ export function toggleEmojiPanel(panel, input, btn, onChange) {
     return;
   }
   input.blur();
+  pushLayer('panel', hidePanel);
   panel.classList.remove('tx-hidden');
   btn.innerHTML = I.keyboard;
   draw(panel, input, onChange);

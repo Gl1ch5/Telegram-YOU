@@ -72,6 +72,26 @@ function serve() {
           });
           modOk ? ok('a mod plugs in and is removed cleanly') : fail(`${label}: mod lifecycle failed`);
         }
+        if (code === 'ru') {
+          // the Back gesture closes the topmost layer: menu → chat → (tab → chats)
+          const open = () => page.evaluate(() => document.getElementById('cx-app').dataset.open === '1');
+          await page.click('.cx-msg:nth-last-child(2) .cx-bubble', { button: 'right' });
+          await page.waitForSelector('.reactbar');
+          await page.goBack(); await page.waitForTimeout(250);
+          const menuClosed = await page.evaluate(() => document.getElementById('cx-menu').classList.contains('tx-hidden'));
+          menuClosed && await open() ? ok('Back closes the message menu first') : fail('Back did not close the menu (or closed the chat)');
+          await page.goBack(); await page.waitForTimeout(350);
+          !(await open()) ? ok('Back closes the chat') : fail('Back did not close the chat');
+          await page.click('[data-tab="settings"]'); await page.waitForSelector('#settings-root .tx-row');
+          await page.click('#settings-root .tx-row:nth-child(2)'); await page.waitForTimeout(300);
+          await page.goBack(); await page.waitForTimeout(300);
+          const root = await page.evaluate(() => !!document.querySelector('#settings-root .tx-hero'));
+          root ? ok('Back leaves a settings sub-page') : fail('Back did not leave the settings sub-page');
+          await page.goBack(); await page.waitForTimeout(300);
+          const chats = await page.evaluate(() => !document.getElementById('page-chats').classList.contains('tx-hidden'));
+          chats ? ok('Back from a tab returns to Chats') : fail('Back did not return to Chats');
+          await page.click('.cx-row[data-id="u1000"]'); await page.waitForSelector('.cx-msg');
+        }
         await page.click('.cx-back');
         for (const tab of ['contacts', 'settings', 'profile', 'chats']) { await page.click(`[data-tab="${tab}"]`); await page.waitForTimeout(120); }
         ok('tabs switch');

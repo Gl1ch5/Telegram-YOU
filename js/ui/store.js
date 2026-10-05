@@ -1,6 +1,7 @@
 // Shared state + tiny event bus + helpers of the chat client.
 import { t, tn, locale } from '../i18n.js';
 import { escapeHtml } from '../utils.js';
+import { pushLayer, closeLayer } from './back.js';
 export { t, tn, locale, escapeHtml };
 
 export const S = {
@@ -115,7 +116,8 @@ export function showMenu(x, y, items, opts = {}) {
   if (bar) { bar.style.left = Math.max(8, Math.min(x - 20, innerWidth - bar.offsetWidth - 8)) + 'px'; bar.style.top = top - 62 + 'px'; }
   sheet.style.left = left + 'px';
   sheet.style.top = top + 'px';
-  const close = () => { el.classList.add('tx-hidden'); el.innerHTML = ''; el.onclick = null; };
+  const close = () => { el.classList.add('tx-hidden'); el.innerHTML = ''; el.onclick = null; closeLayer('menu'); };
+  pushLayer('menu', () => { el.classList.add('tx-hidden'); el.innerHTML = ''; el.onclick = null; });
   el.onclick = (e) => {
     const r = e.target.closest('.reactbar button');
     if (r) { close(); opts.onReact && opts.onReact(r.dataset.e); return; }
@@ -132,11 +134,13 @@ export function confirmBox(text, okLabel, danger = true) {
     const el = document.getElementById('cx-menu');
     el.innerHTML = `<div class="dlg"><p>${escapeHtml(text)}</p><div><button data-v="0">${t('Отмена')}</button><button data-v="1" class="${danger ? 'danger' : ''}">${escapeHtml(okLabel)}</button></div></div>`;
     el.classList.remove('tx-hidden');
+    const finish = (v) => { el.classList.add('tx-hidden'); el.innerHTML = ''; el.onclick = null; resolve(v); };
+    pushLayer('menu', () => finish(false));
     el.onclick = (e) => {
       const b = e.target.closest('button');
       if (!b && e.target.closest('.dlg')) return;
-      el.classList.add('tx-hidden'); el.innerHTML = ''; el.onclick = null;
-      resolve(!!b && b.dataset.v === '1');
+      closeLayer('menu');
+      finish(!!b && b.dataset.v === '1');
     };
   });
 }

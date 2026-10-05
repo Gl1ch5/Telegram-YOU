@@ -12,6 +12,7 @@ import { renderContacts, renderSettings, renderProfile, bindOpenPages } from './
 import * as settings from '../views/settings.js';
 import * as profile from '../views/profile.js';
 import { state } from '../state.js';
+import { pushLayer, closeLayer, hasLayer } from './back.js';
 import { api } from '../api.js';
 import { showToast } from '../utils.js';
 
@@ -79,6 +80,9 @@ function dock() {
 
 let settingsParams = {};
 function showTab(tab) {
+  // Back from any tab other than "Chats" returns to "Chats"; Back from there leaves the app.
+  if (tab !== 'chats') pushLayer('tab', () => showTab('chats'));
+  else closeLayer('tab');
   S.tab = tab;
   for (const id of ['chats', 'contacts', 'settings', 'profile']) $(`page-${id}`).classList.toggle('tx-hidden', id !== tab);
   if (tab === 'contacts') renderContacts();
@@ -105,7 +109,7 @@ async function start() {
   state.isAuth = true; state.user = S.me;
   initList();
   bindOpen(openChat);
-  bindOpenPages((id) => { showTab('chats'); openChat(id); });
+  bindOpenPages((id) => openChat(id));
   dock();
   await loadFirst();
   live();
@@ -157,30 +161,41 @@ async function init() {
   // navigation requests from the settings/profile views
   window.addEventListener('cx:go', (e) => {
     const { view, params } = e.detail;
-    if (view === 'settings') { settingsParams = params || {}; if (S.tab !== 'settings') showTab('settings'); else renderSettings(settingsParams); if (params && params.page) history.pushState({ cxPage: params.page }, ''); }
-    else if (view === 'profile') { if (params && params.page) { renderProfile(params); history.pushState({ cxPage: 'p' }, ''); } else showTab('profile'); }
+    if (view === 'settings') {
+      settingsParams = params || {};
+      if (S.tab !== 'settings') showTab('settings'); else renderSettings(settingsParams);
+      if (params && params.page) pushLayer('spage', () => { settingsParams = {}; renderSettings({}); });
+    } else if (view === 'profile') {
+      if (params && params.page) { renderProfile(params); pushLayer('ppage', () => renderProfile({})); } else showTab('profile');
+    }
   });
-  const goBack = () => {
-    if (S.tab === 'settings' && settingsParams.page) { settingsParams = {}; renderSettings({}); }
-    else if (S.tab === 'profile') renderProfile({});
-  };
-  window.addEventListener('cx:back', () => { if (history.state && history.state.cxPage) history.back(); else goBack(); });
-  window.addEventListener('popstate', () => { if (!(history.state && history.state.cxPage)) goBack(); });
+  // arrow buttons inside the ported views = the system Back
+  window.addEventListener('cx:back', () => {
+    if (hasLayer('ppage') || hasLayer('spage')) history.back();
+  });
 
   $('cx-dock').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
   on('tab', showTab);
   on('unread', dock);
 
+  // The interface must not wait for the network: the media bridge starts in the background and,
+  // when a session is saved on this device, the chat list is drawn at once from the local cache.
   if (!fake) {
-    try {
-      const { initMediaBridge } = await import('../media.js');
-      await initMediaBridge('sw.js', './');
-    } catch (e) { console.error('[chat] media bridge', e); }
+    import('../media.js').then((m) => m.initMediaBridge('sw.js', './')).catch((e) => console.error('[chat] media bridge', e));
   }
-
-  let authed = false;
-  try { authed = await S.tg.isAuthorized(); } catch (e) { console.error('[chat] auth check', e); }
-  if (authed) { S.started = true; start(); } else { (await import('../components/authModal.js')).openAuthModal(); }
+  const saved = fake || (S.tg.hasSession && S.tg.hasSession());
+  if (saved) {
+    S.started = true;
+    start();
+    if (!fake) {
+      // Verify the session in the background; a revoked session sends the user to the login screen.
+      S.tg.isAuthorized().then(async (ok) => {
+        if (!ok) { (await import('../components/authModal.js')).openAuthModal(); }
+      }).catch((e) => console.error('[chat] auth check', e));
+    }
+  } else {
+    (await import('../components/authModal.js')).openAuthModal();
+  }
 }
 
 init().catch((e) => { console.error('[chat] init', e); document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;inset:0;margin:0;padding:20px;background:#000;color:#f66;z-index:999;white-space:pre-wrap">${String(e && e.stack || e)}</pre>`); });

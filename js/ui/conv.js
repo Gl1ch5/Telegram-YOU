@@ -5,6 +5,7 @@ import { patchDialog, onLiveMessage as listMessage, mediaLabel, removeDialog, fo
 import { toggleEmojiPanel, closePanel } from './panel.js';
 import { openProfile } from './profile.js';
 import { ext } from './ext.js';
+import { pushLayer, closeLayer } from './back.js';
 import { bindModsHost } from './mods.js';
 import { WALLPAPERS, applyWallpaper } from '../components/wallpaperTheme.js';
 
@@ -24,12 +25,40 @@ export async function openChat(id) {
   app().dataset.open = '1';
   document.getElementById('cx-empty').classList.add('tx-hidden');
   el().classList.remove('tx-hidden');
-  if (!history.state || history.state.chat !== id) history.pushState({ chat: id }, '');
+  pushLayer('chat', () => closeChat(true));
   buildShell();
   emit('selected', id);
   loadPins();
   loadAppearance();
+  // Instant open: what we saw last time is drawn at once, then refreshed from Telegram.
+  const cached = readMsgCache(id);
+  if (cached && cached.length) {
+    cur.msgs = cached;
+    renderAll();
+    const ld = el().querySelector('#cx-ld');
+    if (ld) ld.remove();
+    scrollBottom();
+  }
   await loadOlder(true);
+}
+
+// ---------------------------------------------------------------- message cache (last chats, instant open)
+const MC = 'telex.cx.m.';
+const mem = new Map();
+function readMsgCache(id) {
+  if (mem.has(id)) return mem.get(id);
+  try { const v = JSON.parse(localStorage.getItem(MC + id) || 'null'); if (v) mem.set(id, v); return v; } catch { return null; }
+}
+function writeMsgCache(id, msgs) {
+  const tail = msgs.filter((m) => m.id > 0).slice(-30);
+  mem.set(id, tail);
+  try {
+    localStorage.setItem(MC + id, JSON.stringify(tail));
+    const lru = (JSON.parse(localStorage.getItem('telex.cx.mlru') || '[]')).filter((x) => x !== id);
+    lru.unshift(id);
+    for (const old of lru.splice(10)) localStorage.removeItem(MC + old);
+    localStorage.setItem('telex.cx.mlru', JSON.stringify(lru));
+  } catch { /* storage full: the cache is optional */ }
 }
 
 async function dialogFromSearch(id) {
@@ -47,10 +76,9 @@ export function closeChat(fromPop = false) {
   cur = null;
   delete app().dataset.open;
   setTimeout(() => { if (!cur) { el().classList.add('tx-hidden'); el().innerHTML = ''; document.getElementById('cx-empty').classList.remove('tx-hidden'); } }, 280);
-  if (!fromPop && history.state && history.state.chat) history.back();
+  closeLayer('chat');
   emit('selected', null);
 }
-window.addEventListener('popstate', () => { if (cur && !(history.state && history.state.chat)) closeChat(true); });
 export const currentChat = () => (cur ? cur.id : null);
 
 // ---------------------------------------------------------------- shell
@@ -164,9 +192,9 @@ async function loadOlder(first = false) {
     if (!cur || cur.id !== id) return;
     cur.hasMore = res.hasMore;
     const before = box.scrollHeight;
-    cur.msgs = [...res.messages, ...cur.msgs];
+    cur.msgs = first ? res.messages : [...res.messages, ...cur.msgs];
     renderAll();
-    if (first) { scrollBottom(); markRead(); } else box.scrollTop += box.scrollHeight - before;
+    if (first) { scrollBottom(); markRead(); writeMsgCache(id, cur.msgs); } else box.scrollTop += box.scrollHeight - before;
   } catch (e) {
     console.error('[chat] history', e);
     toast(t('Не удалось загрузить сообщения'));
@@ -454,6 +482,7 @@ async function jumpTo(id) {
 // ---------------------------------------------------------------- selection mode
 function enterSelect(id) {
   cur.sel = new Set([Number(id)]);
+  pushLayer('sel', () => { if (cur) { cur.sel = null; applySel(); } });
   applySel();
 }
 function toggleSel(id) {
@@ -464,6 +493,7 @@ function toggleSel(id) {
 }
 function exitSelect() {
   cur.sel = null;
+  closeLayer('sel');
   applySel();
 }
 function applySel() {
@@ -499,6 +529,7 @@ async function forwardMsgs(list) {
 // ---------------------------------------------------------------- search in chat
 function startSearch() {
   cur.search = { q: '', results: [] };
+  pushLayer('search', () => { if (cur && cur.search) endSearch(); });
   refreshHeader();
   refreshPin();
   const inp = el().querySelector('#cx-sq');
@@ -522,6 +553,10 @@ function renderSearch() {
   box.onclick = (e) => { const r = e.target.closest('[data-jump]'); if (r) { const id = Number(r.dataset.jump); stopSearch(); jumpTo(id); } };
 }
 function stopSearch() {
+  closeLayer('search');
+  endSearch();
+}
+function endSearch() {
   cur.search = null;
   const r = el().querySelector('#cx-results');
   if (r) r.remove();
@@ -674,7 +709,9 @@ function openViewer(src, kind) {
   const v = document.getElementById('cx-viewer');
   v.innerHTML = `<button class="x cx-icon" aria-label="${t('Закрыть')}">${I.close}</button>${kind === 'video' ? `<video src="${escapeHtml(src)}" controls autoplay playsinline></video>` : `<img src="${escapeHtml(src)}" alt="">`}`;
   v.classList.remove('tx-hidden');
-  v.onclick = (e) => { if (e.target.tagName !== 'VIDEO') { v.classList.add('tx-hidden'); v.innerHTML = ''; } };
+  const hide = () => { v.classList.add('tx-hidden'); v.innerHTML = ''; };
+  pushLayer('viewer', hide);
+  v.onclick = (e) => { if (e.target.tagName !== 'VIDEO') { closeLayer('viewer'); hide(); } };
 }
 
 function onClick(e) {

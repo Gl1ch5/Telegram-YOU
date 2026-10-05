@@ -1,6 +1,7 @@
 // Chats tab: folders, archive, search, dialog rows (Telegram for Android look).
 import { S, t, tn, on, emit, escapeHtml, avatar, listTime, toast, showMenu } from './store.js';
 import { I } from './icons.js';
+import { pushLayer, closeLayer } from './back.js';
 
 const root = () => document.getElementById('page-chats');
 let query = '';
@@ -24,8 +25,29 @@ function sortOrder() {
   S.order = [...pinned, ...rest];
 }
 
+const CACHE_KEY = 'telex.cx.dialogs';
+function readCache() {
+  try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); } catch { return null; }
+}
+function writeCache() {
+  try {
+    const dialogs = S.order.slice(0, 40).map((k) => S.dialogs.get(k));
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ dialogs, folders: S.folders, archived: S.archived.slice(0, 12), at: Date.now() }));
+  } catch { /* storage full: the list simply loads from the network next time */ }
+}
+
 export async function loadFirst() {
-  S.loading = true;
+  // Instant start: draw what we saw last time, refresh from Telegram right after.
+  const cached = readCache();
+  if (cached && cached.dialogs && cached.dialogs.length) {
+    cached.dialogs.forEach((d) => put(d));
+    S.folders = cached.folders || [];
+    S.archived = cached.archived || [];
+    sortOrder();
+    S.loading = false;
+    render();
+  }
+  S.loading = !S.order.length;
   render();
   try {
     const [page, folders] = await Promise.all([
@@ -33,11 +55,14 @@ export async function loadFirst() {
       S.tg.chatFolders().catch(() => []),
     ]);
     S.folders = folders;
+    // fresh data replaces the cached list (keeps order and drops chats that are gone)
+    S.order = [];
     page.dialogs.forEach((d) => put(d));
     S.cursor = page.cursor;
     S.hasMore = page.hasMore;
     sortOrder();
-    S.tg.chatDialogs({ limit: 30, archived: true }).then((a) => { S.archived = a.dialogs; render(); }).catch(() => {});
+    writeCache();
+    S.tg.chatDialogs({ limit: 30, archived: true }).then((a) => { S.archived = a.dialogs; render(); writeCache(); }).catch(() => {});
   } catch (e) {
     console.error('[chat] dialogs', e);
     toast(t('Не удалось загрузить чаты'));
@@ -320,7 +345,8 @@ export function forwardPicker() {
     box.innerHTML = `<div class="cx-top"><button class="cx-icon" data-x="1">${I.back}</button><h1>${t('Переслать')}</h1></div><div class="cx-search">${I.search}<input placeholder="${t('Поиск')}" autocomplete="off"></div><div class="cx-scroll"></div>`;
     document.body.appendChild(box);
     draw();
-    const done = (v) => { box.remove(); resolve(v); };
+    const done = (v) => { closeLayer('picker'); box.remove(); resolve(v); };
+    pushLayer('picker', () => { box.remove(); resolve(null); });
     box.onclick = (e) => {
       if (e.target.closest('[data-x]')) return done(null);
       const r = e.target.closest('.cx-row[data-id]');
